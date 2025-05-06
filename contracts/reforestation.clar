@@ -113,3 +113,73 @@
 (define-read-only (get-total-projects)
     (ok (var-get total-projects))
 )
+
+
+
+(define-constant ERR-NO-CHANGES (err u105))
+
+(define-public (update-project (project-id uint) (new-location (string-ascii 64)) (additional-trees uint))
+    (let 
+        ((project (unwrap! (map-get? projects project-id) ERR-PROJECT-NOT-FOUND))
+         (stats (default-to 
+            {total-trees: u0, total-rewards: u0, projects-count: u0} 
+            (map-get? community-stats tx-sender))))
+        (asserts! (is-eq tx-sender (get owner project)) ERR-NOT-AUTHORIZED)
+        (asserts! (not (get verified project)) ERR-NOT-AUTHORIZED)
+        (asserts! (or (> additional-trees u0) (not (is-eq new-location (get location project)))) ERR-NO-CHANGES)
+        
+        (map-set projects project-id
+            (merge project 
+                {
+                    location: new-location,
+                    trees-count: (+ (get trees-count project) additional-trees)
+                }
+            )
+        )
+        (map-set community-stats tx-sender
+            (merge stats 
+                {total-trees: (+ (get total-trees stats) additional-trees)}
+            )
+        )
+        (ok true)
+    )
+)
+
+
+(define-constant ERR-TRANSFER-FAILED (err u106))
+
+(define-public (transfer-project (project-id uint) (new-owner principal))
+    (let 
+        ((project (unwrap! (map-get? projects project-id) ERR-PROJECT-NOT-FOUND))
+         (old-stats (default-to 
+            {total-trees: u0, total-rewards: u0, projects-count: u0} 
+            (map-get? community-stats tx-sender)))
+         (new-stats (default-to 
+            {total-trees: u0, total-rewards: u0, projects-count: u0} 
+            (map-get? community-stats new-owner))))
+        
+        (asserts! (is-eq tx-sender (get owner project)) ERR-NOT-AUTHORIZED)
+        (asserts! (not (get verified project)) ERR-NOT-AUTHORIZED)
+        
+        (map-set projects project-id
+            (merge project {owner: new-owner})
+        )
+        (map-set community-stats tx-sender
+            (merge old-stats 
+                {
+                    total-trees: (- (get total-trees old-stats) (get trees-count project)),
+                    projects-count: (- (get projects-count old-stats) u1)
+                }
+            )
+        )
+        (map-set community-stats new-owner
+            (merge new-stats 
+                {
+                    total-trees: (+ (get total-trees new-stats) (get trees-count project)),
+                    projects-count: (+ (get projects-count new-stats) u1)
+                }
+            )
+        )
+        (ok true)
+    )
+)

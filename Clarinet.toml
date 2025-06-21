@@ -5,6 +5,11 @@ authors = []
 telemetry = true
 cache_dir = '.\.cache'
 requirements = []
+[contracts.carbon-credits]
+path = 'contracts/carbon-credits.clar'
+clarity_version = 3
+epoch = 3.1
+
 [contracts.reforestation]
 path = 'contracts/reforestation.clar'
 clarity_version = 3

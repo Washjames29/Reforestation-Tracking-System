@@ -24,6 +24,11 @@ epoch = 3.1
 path = 'contracts/carbon-staking.clar'
 clarity_version = 3
 epoch = 3.1
+
+[contracts.tree-diversity]
+path = 'contracts/tree-diversity.clar'
+clarity_version = 3
+epoch = 3.1
 [repl.analysis]
 passes = ['check_checker']
 
